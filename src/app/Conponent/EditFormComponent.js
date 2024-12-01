@@ -1,0 +1,90 @@
+import React, { useEffect, useState } from 'react'
+import { insertTodolist } from '../Service/authService';
+import { useDataContext } from '../Context/Datacontext';
+import { updateTodolist } from '../Service/authService';
+import { doneTodolistApi } from '../Service/authService';
+
+export default function EditFormComponent({ saveTodo }) {
+  const { currentDate, pageState, handleNewTask, handleSaveForm, handleEditForm, editData } = useDataContext();
+  const [formData, setFormData] = useState({
+    todolist_detail: editData.todolist_detail,
+    todolist_name: editData.todolist_name,
+    todolist_type: 1,
+    user_id: '',
+  })
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "todolist_type") {
+      setFormData({
+        ...formData,
+        [name]: Number(value)
+      });
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
+  }
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user'); // Assuming 'user' is the key where you store user data
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser); // Convert string to object
+      setFormData((prevData) => ({
+        ...prevData,
+        user_id: parsedUser.user_id, // Set user_id from localStorage
+      }));
+    }
+    console.log("Data in useEffect : ", formData)
+  }, [])
+
+  const handleSubmit = async (e) => {
+    const todolist_id = editData.todolist_id
+    e.preventDefault();
+    try {
+      const todolistData = await updateTodolist(formData, todolist_id);
+      console.log("Test Todolist Data : ", todolistData)
+      handleSaveForm();
+    } catch (e) {
+      console.log("Error : ", e)
+    }
+  }
+
+  const doneTodolist = async () => {
+    const todolist_id = editData.todolist_id
+    try {
+      const todolistData = await doneTodolistApi(todolist_id, 0);
+      console.log("Test Todolist Data : ", todolistData)
+      handleSaveForm();
+    } catch (e) {
+      console.log("Error : ", e)
+    }
+  }
+
+  return (
+    <div className='flex flex-col'>
+      <div className='flex justify-center items-center my-4'>
+        <h1 className='text-4xl font-bold'>Edit Todo</h1>
+      </div>
+      <form action="" onSubmit={handleSubmit}>
+        <div className='my-2'>
+          <label>Todolist Name</label>
+          <input type="text" className='w-full h-10 border-2 p-1' onChange={handleChange} name='todolist_name' value={formData.todolist_name} />
+        </div>
+        <div className='my-2'>
+          <label>Priority</label>
+          <select id="cars" name="todolist_type" className='w-full flex p-2 border-2' onChange={handleChange} value={formData.todolist_type}>
+            <option value="1">Normal</option>
+            <option value="2">High</option>
+          </select>
+        </div>
+        <div className='my-2'>
+          <label>Todolist Detail</label>
+          <textarea type="text" className='w-full h-20 border-2 resize-none p-1' onChange={handleChange} name='todolist_detail' value={formData.todolist_detail}></textarea>
+        </div>
+        <button type='submit' className='px-7 py-1 rounded-md bg-blue-400 mx-1'>Save</button>
+        <button className='px-5 py-1 rounded-md bg-red-400 mx-1' onClick={handleSaveForm}>Cancel</button>
+      </form>
+      <button className='px-5 py-4 my-5 rounded-md bg-green-400 mx-1 font-bold text-2xl' onClick={doneTodolist}>Done Todo</button>
+    </div>
+  )
+}
